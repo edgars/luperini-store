@@ -139,3 +139,29 @@ export async function removeProductImageFiles(image: {
 
   await Promise.all(paths.map((path) => removeStorageObject(path).catch(() => undefined)));
 }
+
+export async function uploadHomeHeroImage(file: File): Promise<string> {
+  const sizeError = validateProductImageSize(file.size);
+  if (sizeError) {
+    throw new Error(sizeError);
+  }
+
+  if (!isAllowedImageMimeType(file.type)) {
+    throw new Error("Formato não suportado. Use JPG, PNG, WebP ou GIF.");
+  }
+
+  const sharp = (await import("sharp")).default;
+  const rawBuffer = Buffer.from(await file.arrayBuffer());
+  const webp = await sharp(rawBuffer)
+    .resize({
+      width: 1200,
+      height: 1600,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .webp({ quality: 85 })
+    .toBuffer();
+
+  const path = `home/hero-${Date.now()}.webp`;
+  return uploadBuffer(path, webp);
+}

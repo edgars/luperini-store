@@ -1,14 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { STORE_NAV_LINKS } from "@/lib/store/constants";
+import { defaultHomeNavLinks, type StoreNavLink } from "@/lib/store/home-config";
 import { cn } from "@/lib/utils";
 
 interface StoreHeaderProps {
   cartCount?: number;
+  navLinks?: StoreNavLink[];
 }
 
-export function StoreHeader({ cartCount = 0 }: StoreHeaderProps) {
+export function StoreHeader({
+  cartCount = 0,
+  navLinks = [...defaultHomeNavLinks],
+}: StoreHeaderProps) {
   return (
     <header className="bg-store-cream">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-7 lg:px-8 lg:py-8">
@@ -31,9 +35,9 @@ export function StoreHeader({ cartCount = 0 }: StoreHeaderProps) {
             aria-label="Categorias"
             className="hidden justify-center gap-6 lg:flex xl:gap-10"
           >
-            {STORE_NAV_LINKS.map((link) => (
+            {navLinks.map((link) => (
               <Link
-                key={link.href}
+                key={`${link.href}-${link.label}`}
                 href={link.href}
                 className={cn(
                   "font-store-sans text-[11px] uppercase tracking-[0.18em] text-store-charcoal",
@@ -65,9 +69,9 @@ export function StoreHeader({ cartCount = 0 }: StoreHeaderProps) {
           aria-label="Categorias mobile"
           className="mt-4 flex gap-5 overflow-x-auto pb-1 lg:hidden"
         >
-          {STORE_NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link
-              key={link.href}
+              key={`mobile-${link.href}-${link.label}`}
               href={link.href}
               className="shrink-0 font-store-sans text-[10px] uppercase tracking-[0.16em] text-store-charcoal/80 transition-opacity hover:opacity-60"
             >

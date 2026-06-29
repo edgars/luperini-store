@@ -26,12 +26,20 @@ export default async function AdminSuppliersPage() {
         title="Fornecedores"
         description="Cadastre fornecedores e acompanhe o desempenho de cada um."
         actions={
-          <Link
-            href="/admin/produtos"
-            className={cn(buttonVariants({ variant: "outline" }))}
-          >
-            Voltar aos produtos
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href="/admin/contatos"
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              Contatos
+            </Link>
+            <Link
+              href="/admin/produtos"
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              Voltar aos produtos
+            </Link>
+          </div>
         }
       />
 

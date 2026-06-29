@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  ContactRound,
   FolderTree,
   LayoutDashboard,
   Package,
@@ -34,6 +35,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/produtos", label: "Produtos", icon: Package },
       { href: "/admin/categorias", label: "Categorias", icon: FolderTree },
       { href: "/admin/fornecedores", label: "Fornecedores", icon: Warehouse },
+      { href: "/admin/contatos", label: "Contatos", icon: ContactRound },
     ],
   },
   {

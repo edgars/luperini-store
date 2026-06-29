@@ -29,6 +29,8 @@ type SupplierSelectFieldProps = {
   defaultValue?: string | null;
   disabled?: boolean;
   allowCreate?: boolean;
+  optional?: boolean;
+  emptyLabel?: string;
 };
 
 export function SupplierSelectField({
@@ -38,6 +40,8 @@ export function SupplierSelectField({
   defaultValue = "",
   disabled = false,
   allowCreate = true,
+  optional = false,
+  emptyLabel = "Selecione um fornecedor",
 }: SupplierSelectFieldProps) {
   const [items, setItems] = useState(
     initialSuppliers.filter((supplier) => supplier.isActive),
@@ -101,11 +105,11 @@ export function SupplierSelectField({
           name={name}
           value={selectedId}
           disabled={disabled}
-          required={!disabled}
+          required={!disabled && !optional}
           onChange={(event) => setSelectedId(event.target.value)}
           className={cn(selectClassName, allowCreate && "min-w-0 flex-1")}
         >
-          <option value="">Selecione um fornecedor</option>
+          <option value="">{emptyLabel}</option>
           {options.map((supplier) => (
             <option key={supplier.id} value={supplier.id}>
               {supplier.name}

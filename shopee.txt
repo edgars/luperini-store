@@ -1,0 +1,229 @@
+Como conectar a Luperini Store a marketplaces
+
+  Não existe um “plug único” para TikTok, Shopee, Mercado Livre etc. Cada canal tem API própria, regras de catálogo, pedidos e
+  logística. O caminho usual é tratar marketplaces como canais de venda paralelos à loja própria, com uma camada de integração no
+  meio.
+
+  ────────────────────────────────────────
+
+  1. Modelo arquitetural (recomendado)
+
+  Sua loja (fonte da verdade)
+      ↓
+  Camada de integração (sync + webhooks)
+      ↓
+  APIs dos marketplaces (TikTok Shop, Shopee, ML…)
+
+  Na prática você adicionaria ao projeto:
+
+  ┌────────────────────────┬─────────────────────────────────────────────────┐
+  │ Módulo                 │ Função                                          │
+  ├────────────────────────┼─────────────────────────────────────────────────┤
+  │ Contas conectadas      │ OAuth/credenciais por marketplace e loja        │
+  ├────────────────────────┼─────────────────────────────────────────────────┤
+  │ Mapeamento de produtos │ product_id ↔ sku ↔ listing_id de cada canal     │
+  ├────────────────────────┼─────────────────────────────────────────────────┤
+  │ Sync de catálogo       │ título, preço, estoque, imagens, categorias     │
+  ├────────────────────────┼─────────────────────────────────────────────────┤
+  │ Pedidos unificados     │ webhook/API → orders com origem tiktok, shopee… │
+  ├────────────────────────┼─────────────────────────────────────────────────┤
+  │ Estoque central        │ venda em qualquer canal baixa o mesmo estoque   │
+  ├────────────────────────┼─────────────────────────────────────────────────┤
+  │ Fila de jobs           │ filas para retry (API instável, rate limit)     │
+  └────────────────────────┴─────────────────────────────────────────────────┘
+
+  Com sua stack (Next.js + Supabase + Drizzle), isso ficaria em server actions/API routes + jobs (Vercel Cron, Inngest, Trigger.dev
+  ou worker separado), não só no frontend.
+
+  ────────────────────────────────────────
+
+  2. Três formas de integrar
+
+  A) API oficial (ideal)
+  Cada marketplace expõe APIs para:
+  • publicar/atualizar produtos
+  • receber pedidos (webhook ou polling)
+  • atualizar estoque e status de envio
+
+  Exemplos:
+  • TikTok Shop — Partner API (https://partner.tiktokshop.com/) (OAuth, produtos, pedidos, fulfillment)  
+  • Shopee — Open Platform (https://open.shopee.com/) (similar: auth, item, order, logistics)  
+  • Mercado Livre — API madura, muito usada no BR
+
+  B) Hub / middleware (mais rápido, menos controle)
+  Plataformas como Base.com, Plugg.to, Tiny/Olist, Bling já conectam vários marketplaces. Sua loja integra uma vez com o hub; o hub
+  fala com TikTok, Shopee etc.
+
+  C) Planilha / feed (limitado)
+  Alguns canais aceitam CSV/XML. Serve para catálogo simples, não para pedidos em tempo real.
+
+  ────────────────────────────────────────
+
+  3. Fluxos que você precisaria cobrir
+
+  Catálogo (loja → marketplace)
+  • Criar “listing” a partir do produto admin
+  • Mapear categorias (cada um usa árvore diferente)
+  • Respeitar regras de imagem, título, variações (tamanho/cor)
+  • Preço pode ser diferente por canal (markup, taxas)
+
+  Estoque (bidirecional)
+  • Venda na loja → atualiza TikTok/Shopee
+  • Venda no marketplace → webhook → baixa estoque local
+  • Conflito: reservar estoque ou usar fila com lock para não oversell
+
+  Pedidos (marketplace → sua plataforma)
+  • Webhook de “novo pedido”
+  • Gravar em orders com channel = 'shopee' e snapshot de endereço/preço
+  • Status: pago → preparando → enviado → entregue (espelhar nos dois lados)
+
+  Envio
+  • Informar código de rastreio de volta ao marketplace
+  • Alguns exigem transportadora específica ou logística própria (Shopee Xpress, etc.)
+
+  ────────────────────────────────────────
+
+  4. O que muda no seu banco (conceitualmente)
+
+  Além do que você já tem:
+
+  • sales_channels — tiktok, shopee, web…
+  • channel_accounts — tokens OAuth, loja externa
+  • channel_listings — vínculo produto ↔ listing externo
+  • orders.channel, orders.external_order_id
+  • sync_jobs / webhook_events — auditoria e retry
+
+  Assim a vitrine continua sendo a loja; marketplaces são mais um canal de pedido e estoque.
+
+  ────────────────────────────────────────
+
+  5. Caminhos práticos para a Luperini
+
+  ┌──────────────────────────────────────────────┬───────────────────────────────────────┐
+  │ Abordagem                                    │ Quando faz sentido                    │
+  ├──────────────────────────────────────────────┼───────────────────────────────────────┤
+  │ Integrar 1 marketplace via API (ex.: Shopee) │ Poucos SKUs, controle total, time dev │
+  ├──────────────────────────────────────────────┼───────────────────────────────────────┤
+  │ Usar ERP/hub (Bling, Tiny, Plugg.to)         │ Vários canais rápido, menos código    │
+  ├──────────────────────────────────────────────┼───────────────────────────────────────┤
+  │ Só export manual + pedidos manuais           │ MVP, volume baixo                     │
+  └──────────────────────────────────────────────┴───────────────────────────────────────┘
+
+  Ordem sensata:
+  1. Estoque e SKU únicos já sólidos na loja
+  2. Um canal piloto (ex.: Shopee BR)
+  3. Pedidos + estoque automáticos
+  4. Depois TikTok Shop, ML etc.
+
+  ────────────────────────────────────────
+
+  6. Pontos de atenção
+
+  • OAuth e renovação de token — tokens expiram; precisa job de refresh
+  • Rate limits — sync em lote, não a cada clique
+  • Regras por país — TikTok/Shopee variam BR vs outros
+  • Taxas e preço — preço na loja ≠ preço no marketplace
+  • Variações — Shopee/TikTok exigem model SKU por combinação tamanho/cor
+  • Homologação — alguns exigem app aprovado no partner program
+
+  ────────────────────────────────────────
+
+  Resumo
+
+  Conectar marketplaces = API (ou hub) + mapeamento produto/pedido/estoque + webhooks + fila de sync. A loja vira o centro; TikTok
+  e Shopee viram canais que leem o mesmo catálogo e estoque e devolvem pedidos para o mesmo fluxo que você já planeja (pagamento,
+  envio, tickets).
+
+  Se quiser, no próximo passo dá para desenhar só o MVP Shopee ou hub vs API direta com tabelas e endpoints encaixados no seu
+  CURSOR.md.
+
+                                                                                                                                      
+  Como me conecto a shopee ? me de apenas os passos                                                                                   
+                                                                                                                                      
+
+    WebSearch Shopee Open Platform API seller integration steps 2025 2026
+    Found 2 references
+
+  Conectar à Shopee — passos
+
+  1. Pré-requisitos
+
+  • Ter conta de vendedor Shopee ativa (Brasil ou região desejada)
+  • Ter domínio HTTPS da sua plataforma (ex.: https://sua-loja.vercel.app)
+  • Definir se você integra só a sua loja ou várias lojas (parceiro)
+
+  ────────────────────────────────────────
+
+  2. Criar conta de desenvolvedor
+
+  1. Acesse Shopee Open Platform (https://open.shopee.com/)
+  2. Crie/login na conta de desenvolvedor
+  3. Vá em Console → App Management → App List
+  4. Escolha o tipo de app:
+    • Shopee Seller — se for sua loja Shopee
+    • Third-party Partner Platform — se a Luperini for integrar vários vendedores
+  5. Preencha o perfil e envie para aprovação (Shopee Seller ~3 dias úteis; parceiro ~10)
+
+  ────────────────────────────────────────
+
+  3. Criar o app e configurar URLs
+
+  1. Após aprovação, crie um App no console
+  2. Anote Partner ID e Partner Key
+  3. Configure:
+    • Redirect URL (callback OAuth) — ex.: https://sua-loja.com/api/shopee/callback
+    • Webhook URL — ex.: https://sua-loja.com/api/webhooks/shopee
+  4. Marque as permissões necessárias (produto, pedido, estoque, logística)
+
+  ────────────────────────────────────────
+
+  4. Ambiente de testes (sandbox)
+
+  1. Use o sandbox do console para testar sem afetar a loja real
+  2. Crie credenciais de teste e loja sandbox
+  3. Guarde Partner ID, Partner Key e URLs de sandbox separadas das de produção
+
+  ────────────────────────────────────────
+
+  5. Autorizar a loja (OAuth)
+
+  1. Gere o link de autorização (Partner ID + redirect URI)
+  2. Abra o link, faça login como vendedor Shopee e autorize o app
+  3. A Shopee redireciona para sua URL com code + shop_id
+  4. Troque o code por access_token e refresh_token (API GetAccessToken)
+  5. Salve tokens criptografados no banco (ex.: tabela channel_accounts)
+
+  ────────────────────────────────────────
+
+  6. Implementar na sua plataforma
+
+  1. Variáveis de ambiente: SHOPEE_PARTNER_ID, SHOPEE_PARTNER_KEY, URLs
+  2. Assinatura HMAC-SHA256 em todas as requisições (obrigatório na API v2)
+  3. Refresh automático do token (access token expira em ~4h)
+  4. Webhooks para pedidos novos, cancelamentos, etc.
+  5. Sync: produtos/SKU, preço, estoque e status de envio
+
+  ────────────────────────────────────────
+
+  7. Homologação e produção
+
+  1. Teste fluxo completo no sandbox: publicar produto → receber pedido → atualizar estoque/rastreio
+  2. Se for parceiro, informe URL de login e conta de teste para a Shopee validar
+  3. Solicite go-live / troque para credenciais de produção
+  4. Repita a autorização OAuth na loja real
+
+  ────────────────────────────────────────
+
+  8. Operação contínua
+
+  • Renovar tokens antes de expirar
+  • Tratar rate limits e fila de retry
+  • Manter mapeamento seu produto ↔ listing Shopee por SKU
+  • Sincronizar estoque nos dois sentidos para evitar oversell
+
+  ────────────────────────────────────────
+
+  Atalho: se quiser ir mais rápido sem API direta, conecte via hub/ERP (Bling, Tiny, Plugg.to) e integre sua loja só com o hub —
+  menos controle, menos desenvolvimento.
+
+  Documentação oficial: open.shopee.com/documents (https://open.shopee.com/documents?version=2)

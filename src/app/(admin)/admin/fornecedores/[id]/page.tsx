@@ -2,6 +2,7 @@ import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { PurchaseContactForm } from "@/components/admin/purchase-contact-form";
 import {
   DeleteSupplierButton,
   SupplierForm,
@@ -18,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { db } from "@/db";
-import { products, supplierPurchases, suppliers } from "@/db/schema";
+import { products, purchaseContacts, supplierPurchases, suppliers } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
 import { getSupplierDetailStats } from "@/lib/admin/supplier-stats";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
@@ -51,7 +52,7 @@ export default async function AdminSupplierDetailPage({
     );
   }
 
-  const [stats, linkedProducts, purchases, supplierProducts] =
+  const [stats, linkedProducts, purchases, supplierProducts, contacts, allSuppliers] =
     await Promise.all([
       getSupplierDetailStats(id),
       db
@@ -84,6 +85,12 @@ export default async function AdminSupplierDetailPage({
         .from(products)
         .where(eq(products.supplierId, id))
         .orderBy(products.name),
+      db
+        .select()
+        .from(purchaseContacts)
+        .where(eq(purchaseContacts.supplierId, id))
+        .orderBy(purchaseContacts.name),
+      db.select().from(suppliers).orderBy(suppliers.name),
     ]);
 
   return (
@@ -184,6 +191,51 @@ export default async function AdminSupplierDetailPage({
 
           <Card>
             <CardHeader>
+              <CardTitle>Contatos de compras</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Cargo</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {contacts.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-muted-foreground">
+                        Nenhum contato vinculado.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    contacts.map((contact) => (
+                      <TableRow key={contact.id}>
+                        <TableCell>
+                          <Link
+                            href={`/admin/contatos/${contact.id}`}
+                            className="hover:underline"
+                          >
+                            {contact.name}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{contact.role ?? "—"}</TableCell>
+                        <TableCell>{contact.phone ?? "—"}</TableCell>
+                        <TableCell>
+                          {contact.isActive ? "Ativo" : "Inativo"}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Histórico de compras</CardTitle>
             </CardHeader>
             <CardContent>
@@ -228,6 +280,18 @@ export default async function AdminSupplierDetailPage({
             </CardHeader>
             <CardContent>
               <SupplierForm supplier={supplier} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Novo contato</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PurchaseContactForm
+                suppliers={allSuppliers}
+                defaultSupplierId={id}
+              />
             </CardContent>
           </Card>
 

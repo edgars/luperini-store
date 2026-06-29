@@ -6,13 +6,3 @@ export const STORE_NAV_LINKS = [
 ] as const;
 
 export const MAX_FEATURED_PRODUCTS = 5;
-
-export const HERO_CONTENT = {
-  eyebrow: "Lookbook 02 / 26",
-  title: "Outono Inverno",
-  titleAccent: "em alta",
-  description:
-    "Alfaiataria fluida, toques de seda e a paleta nude que define a temporada. Peças pensadas para a mulher que veste elegância sem esforço.",
-  ctaLabel: "Ver lookbook",
-  ctaHref: "/produtos?sort=lookbook",
-} as const;

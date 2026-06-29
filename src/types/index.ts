@@ -12,6 +12,7 @@ import {
   shipments,
   supplierPurchases,
   suppliers,
+  purchaseContacts,
   ticketMessages,
   tickets,
   users,
@@ -31,6 +32,9 @@ export type NewSupplier = typeof suppliers.$inferInsert;
 
 export type SupplierPurchase = typeof supplierPurchases.$inferSelect;
 export type NewSupplierPurchase = typeof supplierPurchases.$inferInsert;
+
+export type PurchaseContact = typeof purchaseContacts.$inferSelect;
+export type NewPurchaseContact = typeof purchaseContacts.$inferInsert;
 
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;

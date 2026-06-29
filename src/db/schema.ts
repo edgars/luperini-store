@@ -143,6 +143,25 @@ export const suppliers = pgTable("suppliers", {
     .notNull(),
 });
 
+export const purchaseContacts = pgTable("purchase_contacts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  role: text("role"),
+  email: text("email"),
+  phone: text("phone"),
+  notes: text("notes"),
+  supplierId: uuid("supplier_id").references(() => suppliers.id, {
+    onDelete: "set null",
+  }),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 export const products = pgTable("products", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
@@ -364,6 +383,14 @@ export const auditLog = pgTable("audit_log", {
     .notNull(),
 });
 
+export const storeSettings = pgTable("store_settings", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").$type<Record<string, unknown>>().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 export type ShippingAddressSnapshot = {
   label?: string;
   zipCode: string;
@@ -401,7 +428,18 @@ export const categoriesRelations = relations(categories, ({ one, many }) => ({
 export const suppliersRelations = relations(suppliers, ({ many }) => ({
   products: many(products),
   purchases: many(supplierPurchases),
+  contacts: many(purchaseContacts),
 }));
+
+export const purchaseContactsRelations = relations(
+  purchaseContacts,
+  ({ one }) => ({
+    supplier: one(suppliers, {
+      fields: [purchaseContacts.supplierId],
+      references: [suppliers.id],
+    }),
+  }),
+);
 
 export const productsRelations = relations(products, ({ one, many }) => ({
   category: one(categories, {
