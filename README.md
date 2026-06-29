@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Luperini Store
 
-## Getting Started
+E-commerce Next.js 15 + Supabase + Drizzle ORM.
 
-First, run the development server:
+## Desenvolvimento local
 
 ```bash
+cp .env.example .env.local
+# Preencha as variáveis (Supabase, DATABASE_URL, etc.)
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Scripts úteis:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `npm run dev:clean` — reinicia o dev server limpando `.next`
+- `npm run setup:supabase` — configuração inicial do Supabase
+- `npm run setup:admin` — cria usuário admin
+- `npm run db:push` — sincroniza schema Drizzle com o banco
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Documentação completa do projeto: [`CURSOR.md`](./CURSOR.md).
 
-## Learn More
+## Deploy na Vercel
 
-To learn more about Next.js, take a look at the following resources:
+1. Importe o repositório em [vercel.com/new](https://vercel.com/new).
+2. Framework detectado: **Next.js** (nenhuma configuração extra necessária).
+3. Node.js: **20.11+** (definido em `.nvmrc` como 22).
+4. Configure as variáveis de ambiente no painel da Vercel (Production e Preview):
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Variável | Obrigatória | Observação |
+|----------|-------------|------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Sim | URL do projeto Supabase |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Sim | Chave publishable (`sb_publishable__...`) |
+| `SUPABASE_SECRET_KEY` | Sim | Service role / secret key (server-only) |
+| `DATABASE_URL` | Sim | **Pooler** Supabase porta **6543** (serverless) |
+| `NEXT_PUBLIC_APP_URL` | Sim | URL de produção (ex.: `https://seu-app.vercel.app`) |
+| `NEXT_PUBLIC_STORE_NAME` | Não | Nome exibido na loja |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+5. No Supabase, adicione a URL de produção em **Authentication → URL Configuration**:
+   - Site URL: `https://seu-app.vercel.app`
+   - Redirect URLs: `https://seu-app.vercel.app/auth/callback`
 
-## Deploy on Vercel
+6. Faça deploy — o build roda `npm run build` e gera páginas estáticas dos produtos ativos.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Upload de imagens (admin)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Server Actions aceitam até **4 MB** (`experimental.serverActions.bodySizeLimit` em `next.config.ts`). A dependência `sharp` é empacotada via `serverExternalPackages`.
+
+### Banco em produção
+
+Use sempre a connection string do **Transaction pooler** (`:6543`), não a conexão direta (`db.*.supabase.co`), para evitar esgotamento de conexões nas funções serverless da Vercel.
+
+## Estrutura
+
+- `src/app/(store)/` — vitrine pública
+- `src/app/(admin)/admin/` — painel administrativo
+- `src/app/auth/` — login e cadastro
+- `supabase/migrations/` — SQL (RLS, storage)

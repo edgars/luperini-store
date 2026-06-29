@@ -1,5 +1,5 @@
-import { StoreFooter } from "@/components/store/store-footer";
-import { StoreHeader } from "@/components/store/store-header";
+import { CartProvider } from "@/components/store/cart-provider";
+import { StoreShell } from "@/components/store/store-shell";
 
 export default function StoreLayout({
   children,
@@ -7,10 +7,8 @@ export default function StoreLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="store-theme flex min-h-screen flex-col">
-      <StoreHeader />
-      <main className="flex-1">{children}</main>
-      <StoreFooter />
-    </div>
+    <CartProvider>
+      <StoreShell>{children}</StoreShell>
+    </CartProvider>
   );
 }
