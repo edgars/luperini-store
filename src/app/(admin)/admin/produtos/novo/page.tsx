@@ -5,7 +5,7 @@ import { ProductForm } from "@/components/admin/product-form";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { db } from "@/db";
-import { categories } from "@/db/schema";
+import { categories, products, suppliers } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +13,10 @@ import { createProductAction } from "../actions";
 
 export default async function NewProductPage() {
   await requireAdmin();
-  const allCategories = await db.select().from(categories).orderBy(categories.name);
+  const [allCategories, allSuppliers] = await Promise.all([
+    db.select().from(categories).orderBy(categories.name),
+    db.select().from(suppliers).orderBy(suppliers.name),
+  ]);
 
   return (
     <div className="w-full space-y-6">
@@ -35,6 +38,7 @@ export default async function NewProductPage() {
           <ProductForm
             action={createProductAction}
             categories={allCategories}
+            suppliers={allSuppliers}
             submitLabel="Criar produto"
           />
         </CardContent>

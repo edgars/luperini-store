@@ -11,9 +11,11 @@ import {
   productImages,
   products,
   productVariants,
+  supplierPurchases,
 } from "@/db/schema";
 import { assertAdminAction } from "@/lib/admin/assert-admin";
 import { parseReaisToCents } from "@/lib/prices";
+import { validateFeaturedLimit } from "@/lib/store/featured-products";
 import {
   removeProductImageFiles,
   uploadProductImage,
@@ -32,6 +34,9 @@ const productSchema = z.object({
   barcode: z.string().optional(),
   status: z.enum(["active", "inactive", "draft"]),
   stock: z.string().optional(),
+  isFeatured: z.boolean(),
+  purchaseSource: z.enum(["supplier", "in_house"]),
+  supplierId: z.string().uuid().optional().or(z.literal("")),
 });
 
 function parseProductForm(formData: FormData) {
@@ -46,6 +51,9 @@ function parseProductForm(formData: FormData) {
     barcode: formData.get("barcode") || undefined,
     status: formData.get("status"),
     stock: formData.get("stock") || undefined,
+    isFeatured: formData.get("isFeatured") === "on",
+    purchaseSource: formData.get("purchaseSource"),
+    supplierId: formData.get("supplierId") || undefined,
   });
 }
 
@@ -79,6 +87,32 @@ function parsePrices(data: {
   };
 }
 
+function resolvePurchaseFields(data: {
+  purchaseSource: "supplier" | "in_house";
+  supplierId?: string;
+}):
+  | { error: string }
+  | {
+      purchaseSource: "supplier" | "in_house";
+      supplierId: string | null;
+    } {
+  if (data.purchaseSource === "supplier") {
+    if (!data.supplierId) {
+      return { error: "Selecione o fornecedor da compra." };
+    }
+
+    return {
+      purchaseSource: "supplier",
+      supplierId: data.supplierId,
+    };
+  }
+
+  return {
+    purchaseSource: "in_house",
+    supplierId: null,
+  };
+}
+
 export async function createProductAction(
   _prevState: ActionResult,
   formData: FormData,
@@ -102,6 +136,16 @@ export async function createProductAction(
   const slug = parsed.data.slug?.trim() || slugify(parsed.data.name);
   const stock = parsed.data.stock ? Number(parsed.data.stock) : 0;
 
+  const featuredError = await validateFeaturedLimit(parsed.data.isFeatured);
+  if (featuredError) {
+    return { success: false, error: featuredError };
+  }
+
+  const purchaseFields = resolvePurchaseFields(parsed.data);
+  if ("error" in purchaseFields) {
+    return { success: false, error: purchaseFields.error };
+  }
+
   let productId: string;
 
   try {
@@ -118,6 +162,9 @@ export async function createProductAction(
         sku: parsed.data.sku?.trim() || null,
         barcode: parsed.data.barcode?.trim() || null,
         status: parsed.data.status,
+        isFeatured: parsed.data.isFeatured,
+        purchaseSource: purchaseFields.purchaseSource,
+        supplierId: purchaseFields.supplierId,
       })
       .returning({ id: products.id });
 
@@ -130,6 +177,24 @@ export async function createProductAction(
       salePrice: prices.salePrice,
       stock: Number.isFinite(stock) && stock >= 0 ? stock : 0,
     });
+
+    const normalizedStock =
+      Number.isFinite(stock) && stock >= 0 ? stock : 0;
+
+    if (normalizedStock > 0) {
+      await db.insert(supplierPurchases).values({
+        supplierId: purchaseFields.supplierId,
+        productId,
+        source: purchaseFields.purchaseSource,
+        quantity: normalizedStock,
+        unitCost: prices.costPrice,
+        totalCost: prices.costPrice * normalizedStock,
+        notes:
+          purchaseFields.purchaseSource === "in_house"
+            ? "Entrada inicial — fabricação própria"
+            : "Compra inicial no cadastro do produto",
+      });
+    }
   } catch {
     return { success: false, error: "Não foi possível criar o produto." };
   }
@@ -162,6 +227,8 @@ export async function createProductAction(
   }
 
   revalidatePath("/admin/produtos");
+  revalidatePath("/admin/fornecedores");
+  revalidatePath("/");
   redirect(`/admin/produtos/${productId}`);
 }
 
@@ -189,6 +256,16 @@ export async function updateProductAction(
   const slug = parsed.data.slug?.trim() || slugify(parsed.data.name);
   const stock = parsed.data.stock ? Number(parsed.data.stock) : 0;
 
+  const featuredError = await validateFeaturedLimit(parsed.data.isFeatured, id);
+  if (featuredError) {
+    return { success: false, error: featuredError };
+  }
+
+  const purchaseFields = resolvePurchaseFields(parsed.data);
+  if ("error" in purchaseFields) {
+    return { success: false, error: purchaseFields.error };
+  }
+
   try {
     await db
       .update(products)
@@ -203,6 +280,9 @@ export async function updateProductAction(
         sku: parsed.data.sku?.trim() || null,
         barcode: parsed.data.barcode?.trim() || null,
         status: parsed.data.status,
+        isFeatured: parsed.data.isFeatured,
+        purchaseSource: purchaseFields.purchaseSource,
+        supplierId: purchaseFields.supplierId,
         updatedAt: new Date(),
       })
       .where(eq(products.id, id));
@@ -284,6 +364,8 @@ export async function updateProductAction(
 
   revalidatePath("/admin/produtos");
   revalidatePath(`/admin/produtos/${id}`);
+  revalidatePath("/admin/fornecedores");
+  revalidatePath("/");
   return { success: true };
 }
 

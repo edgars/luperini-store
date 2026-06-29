@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { db } from "@/db";
-import { categories, products } from "@/db/schema";
+import { categories, products, suppliers } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 
@@ -26,6 +26,9 @@ export default async function AdminProductsPage() {
       id: products.id,
       name: products.name,
       status: products.status,
+      isFeatured: products.isFeatured,
+      purchaseSource: products.purchaseSource,
+      supplierName: suppliers.name,
       salePrice: products.salePrice,
       margin: products.margin,
       createdAt: products.createdAt,
@@ -33,6 +36,7 @@ export default async function AdminProductsPage() {
     })
     .from(products)
     .leftJoin(categories, eq(products.categoryId, categories.id))
+    .leftJoin(suppliers, eq(products.supplierId, suppliers.id))
     .orderBy(desc(products.createdAt));
 
   return (
@@ -42,6 +46,12 @@ export default async function AdminProductsPage() {
         description="Gerencie o catálogo da loja."
         actions={
           <>
+            <Link
+              href="/admin/fornecedores"
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              Fornecedores
+            </Link>
             <Link
               href="/admin/categorias"
               className={cn(buttonVariants({ variant: "outline" }))}
@@ -73,9 +83,11 @@ export default async function AdminProductsPage() {
                 <TableRow>
                   <TableHead>Produto</TableHead>
                   <TableHead>Categoria</TableHead>
+                  <TableHead>Origem</TableHead>
                   <TableHead>Preço</TableHead>
                   <TableHead>Margem</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Destaque</TableHead>
                   <TableHead>Criado em</TableHead>
                 </TableRow>
               </TableHeader>
@@ -91,6 +103,11 @@ export default async function AdminProductsPage() {
                       </Link>
                     </TableCell>
                     <TableCell>{item.categoryName ?? "—"}</TableCell>
+                    <TableCell>
+                      {item.purchaseSource === "in_house"
+                        ? "Fabricação própria"
+                        : (item.supplierName ?? "Fornecedor")}
+                    </TableCell>
                     <TableCell>{formatCurrency(item.salePrice)}</TableCell>
                     <TableCell
                       className={
@@ -101,6 +118,15 @@ export default async function AdminProductsPage() {
                     </TableCell>
                     <TableCell>
                       <ProductStatusBadge status={item.status} />
+                    </TableCell>
+                    <TableCell>
+                      {item.isFeatured ? (
+                        <span className="text-xs font-medium text-amber-700">
+                          Em destaque
+                        </span>
+                      ) : (
+                        "—"
+                      )}
                     </TableCell>
                     <TableCell>{formatDate(item.createdAt)}</TableCell>
                   </TableRow>

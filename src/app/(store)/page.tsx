@@ -3,7 +3,7 @@ import { HeroSection } from "@/components/store/hero-section";
 import { getFeaturedProducts } from "@/lib/store/get-featured-products";
 
 export default async function HomePage() {
-  const featuredProducts = await getFeaturedProducts(3);
+  const featuredProducts = await getFeaturedProducts();
 
   return (
     <>

@@ -1,7 +1,8 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { productImages, products } from "@/db/schema";
+import { MAX_FEATURED_PRODUCTS } from "@/lib/store/constants";
 
 export type StoreProductCard = {
   name: string;
@@ -12,7 +13,7 @@ export type StoreProductCard = {
 };
 
 export async function getFeaturedProducts(
-  limit = 3,
+  limit = MAX_FEATURED_PRODUCTS,
 ): Promise<StoreProductCard[]> {
   const items = await db
     .select({
@@ -30,9 +31,9 @@ export async function getFeaturedProducts(
         eq(productImages.type, "cover"),
       ),
     )
-    .where(eq(products.status, "active"))
-    .orderBy(desc(products.createdAt))
-    .limit(limit);
+    .where(and(eq(products.status, "active"), eq(products.isFeatured, true)))
+    .orderBy(desc(products.updatedAt), asc(products.name))
+    .limit(Math.min(limit, MAX_FEATURED_PRODUCTS));
 
   return items;
 }

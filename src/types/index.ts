@@ -10,6 +10,8 @@ import {
   products,
   productVariants,
   shipments,
+  supplierPurchases,
+  suppliers,
   ticketMessages,
   tickets,
   users,
@@ -23,6 +25,12 @@ export type NewAddress = typeof addresses.$inferInsert;
 
 export type Category = typeof categories.$inferSelect;
 export type NewCategory = typeof categories.$inferInsert;
+
+export type Supplier = typeof suppliers.$inferSelect;
+export type NewSupplier = typeof suppliers.$inferInsert;
+
+export type SupplierPurchase = typeof supplierPurchases.$inferSelect;
+export type NewSupplierPurchase = typeof supplierPurchases.$inferInsert;
 
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;

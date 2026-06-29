@@ -5,13 +5,14 @@ import { toast } from "sonner";
 
 import { CategorySelectField } from "@/components/admin/category-select-field";
 import { ProductImageUploadField } from "@/components/admin/product-image-upload-field";
+import { PurchaseSourceField } from "@/components/admin/purchase-source-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { calculateMarginPercent } from "@/lib/prices";
 import { cn, formatCurrency } from "@/lib/utils";
-import type { ActionResult, Category, Product, ProductImage } from "@/types";
+import type { ActionResult, Category, Product, ProductImage, Supplier } from "@/types";
 
 type ProductFormProps = {
   action: (
@@ -19,6 +20,7 @@ type ProductFormProps = {
     formData: FormData,
   ) => Promise<ActionResult>;
   categories: Category[];
+  suppliers: Supplier[];
   initialData?: Product & {
     stock?: number;
     coverImage?: ProductImage | null;
@@ -31,6 +33,7 @@ const initialState: ActionResult = { success: false, error: "" };
 export function ProductForm({
   action,
   categories,
+  suppliers,
   initialData,
   submitLabel,
 }: ProductFormProps) {
@@ -91,6 +94,12 @@ export function ProductForm({
           label="Categoria"
           categories={categories}
           defaultValue={initialData?.categoryId}
+        />
+
+        <PurchaseSourceField
+          suppliers={suppliers}
+          defaultSource={initialData?.purchaseSource ?? "in_house"}
+          defaultSupplierId={initialData?.supplierId}
         />
 
         <div className="space-y-2 md:col-span-2">
@@ -189,6 +198,24 @@ export function ProductForm({
             <option value="active">Ativo</option>
             <option value="inactive">Inativo</option>
           </select>
+        </div>
+
+        <div className="space-y-2 md:col-span-2">
+          <div className="flex items-start gap-3 rounded-lg border p-4">
+            <input
+              id="isFeatured"
+              name="isFeatured"
+              type="checkbox"
+              defaultChecked={initialData?.isFeatured ?? false}
+              className="mt-1 h-4 w-4 rounded border-input"
+            />
+            <div className="space-y-1">
+              <Label htmlFor="isFeatured">Produto em destaque</Label>
+              <p className="text-sm text-muted-foreground">
+                Exibe na home em carrossel. Máximo de 5 produtos em destaque.
+              </p>
+            </div>
+          </div>
         </div>
 
         <ProductImageUploadField

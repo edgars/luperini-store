@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { ProductCard } from "@/components/store/product-card";
+import { FeaturedProductsCarousel } from "@/components/store/featured-products-carousel";
 import type { StoreProductCard } from "@/lib/store/get-featured-products";
 
 interface FeaturedProductsSectionProps {
@@ -26,21 +26,10 @@ export function FeaturedProductsSection({
 
       {products.length === 0 ? (
         <p className="font-store-sans text-sm text-store-charcoal/60">
-          Nenhum produto disponível no momento.
+          Nenhum produto em destaque no momento.
         </p>
       ) : (
-        <div className="grid gap-8 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-8">
-          {products.map((product) => (
-            <ProductCard
-              key={product.slug}
-              name={product.name}
-              slug={product.slug}
-              priceInCents={product.priceInCents}
-              imageUrl={product.imageUrl}
-              imageAlt={product.imageAlt}
-            />
-          ))}
-        </div>
+        <FeaturedProductsCarousel products={products} />
       )}
     </section>
   );

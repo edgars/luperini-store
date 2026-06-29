@@ -5,6 +5,8 @@ export const STORE_NAV_LINKS = [
   { label: "Acessórios", href: "/produtos?categoria=acessorios" },
 ] as const;
 
+export const MAX_FEATURED_PRODUCTS = 5;
+
 export const HERO_CONTENT = {
   eyebrow: "Lookbook 02 / 26",
   title: "Outono Inverno",

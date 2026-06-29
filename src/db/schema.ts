@@ -77,6 +77,11 @@ export const senderTypeEnum = pgEnum("sender_type", ["customer", "admin"]);
 
 export const couponTypeEnum = pgEnum("coupon_type", ["percentage", "fixed"]);
 
+export const purchaseSourceEnum = pgEnum("purchase_source", [
+  "supplier",
+  "in_house",
+]);
+
 export const auditActionEnum = pgEnum("audit_action", [
   "insert",
   "update",
@@ -121,6 +126,23 @@ export const categories = pgTable("categories", {
   parentId: uuid("parent_id").references((): AnyPgColumn => categories.id),
 });
 
+export const suppliers = pgTable("suppliers", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  contactName: text("contact_name"),
+  email: text("email"),
+  phone: text("phone"),
+  document: text("document"),
+  notes: text("notes"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 export const products = pgTable("products", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
@@ -135,6 +157,13 @@ export const products = pgTable("products", {
   sku: text("sku"),
   barcode: text("barcode"),
   status: productStatusEnum("status").default("draft").notNull(),
+  isFeatured: boolean("is_featured").default(false).notNull(),
+  purchaseSource: purchaseSourceEnum("purchase_source")
+    .default("in_house")
+    .notNull(),
+  supplierId: uuid("supplier_id").references(() => suppliers.id, {
+    onDelete: "set null",
+  }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -170,6 +199,27 @@ export const productImages = pgTable("product_images", {
   height: integer("height"),
   originalWidth: integer("original_width"),
   originalHeight: integer("original_height"),
+});
+
+export const supplierPurchases = pgTable("supplier_purchases", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  supplierId: uuid("supplier_id").references(() => suppliers.id, {
+    onDelete: "set null",
+  }),
+  productId: uuid("product_id")
+    .notNull()
+    .references(() => products.id, { onDelete: "cascade" }),
+  source: purchaseSourceEnum("source").notNull(),
+  quantity: integer("quantity").notNull(),
+  unitCost: integer("unit_cost").notNull(),
+  totalCost: integer("total_cost").notNull(),
+  purchasedAt: timestamp("purchased_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const coupons = pgTable("coupons", {
@@ -348,13 +398,23 @@ export const categoriesRelations = relations(categories, ({ one, many }) => ({
   products: many(products),
 }));
 
+export const suppliersRelations = relations(suppliers, ({ many }) => ({
+  products: many(products),
+  purchases: many(supplierPurchases),
+}));
+
 export const productsRelations = relations(products, ({ one, many }) => ({
   category: one(categories, {
     fields: [products.categoryId],
     references: [categories.id],
   }),
+  supplier: one(suppliers, {
+    fields: [products.supplierId],
+    references: [suppliers.id],
+  }),
   variants: many(productVariants),
   images: many(productImages),
+  purchases: many(supplierPurchases),
 }));
 
 export const productVariantsRelations = relations(
@@ -373,6 +433,20 @@ export const productImagesRelations = relations(productImages, ({ one }) => ({
     references: [products.id],
   }),
 }));
+
+export const supplierPurchasesRelations = relations(
+  supplierPurchases,
+  ({ one }) => ({
+    supplier: one(suppliers, {
+      fields: [supplierPurchases.supplierId],
+      references: [suppliers.id],
+    }),
+    product: one(products, {
+      fields: [supplierPurchases.productId],
+      references: [products.id],
+    }),
+  }),
+);
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
   user: one(users, {

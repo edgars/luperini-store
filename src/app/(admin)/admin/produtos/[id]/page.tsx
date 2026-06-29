@@ -8,6 +8,7 @@ import {
   productImages,
   products,
   productVariants,
+  suppliers,
 } from "@/db/schema";
 import { DeleteProductButton } from "@/components/admin/delete-product-button";
 import { ProductForm } from "@/components/admin/product-form";
@@ -46,7 +47,10 @@ export default async function EditProductPage({
     );
   }
 
-  const allCategories = await db.select().from(categories).orderBy(categories.name);
+  const [allCategories, allSuppliers] = await Promise.all([
+    db.select().from(categories).orderBy(categories.name),
+    db.select().from(suppliers).orderBy(suppliers.name),
+  ]);
   const [variant] = await db
     .select()
     .from(productVariants)
@@ -73,6 +77,7 @@ export default async function EditProductPage({
           <ProductForm
             action={updateProductAction.bind(null, id)}
             categories={allCategories}
+            suppliers={allSuppliers}
             initialData={{
               ...product,
               stock: variant?.stock ?? 0,

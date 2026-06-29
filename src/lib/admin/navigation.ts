@@ -9,6 +9,7 @@ import {
   Truck,
   Users,
   Wallet,
+  Warehouse,
 } from "lucide-react";
 
 export type AdminNavItem = {
@@ -32,6 +33,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       { href: "/admin/produtos", label: "Produtos", icon: Package },
       { href: "/admin/categorias", label: "Categorias", icon: FolderTree },
+      { href: "/admin/fornecedores", label: "Fornecedores", icon: Warehouse },
     ],
   },
   {
