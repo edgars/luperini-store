@@ -3,12 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { CartCouponField } from "@/components/store/cart-coupon-field";
 import { useCart } from "@/components/store/cart-provider";
 import { StripePlaceholder } from "@/components/store/stripe-placeholder";
 import { cn, formatCurrency } from "@/lib/utils";
 
 export function CartContents() {
-  const { items, isReady, itemCount, updateQuantity, removeItem } = useCart();
+  const { items, isReady, itemCount, subtotal, discount, total, updateQuantity, removeItem } =
+    useCart();
 
   if (!isReady) {
     return (
@@ -31,11 +33,6 @@ export function CartContents() {
       </div>
     );
   }
-
-  const subtotal = items.reduce(
-    (total, item) => total + item.unitPrice * item.quantity,
-    0,
-  );
 
   return (
     <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
@@ -122,18 +119,35 @@ export function CartContents() {
         ))}
       </ul>
 
-      <aside className="h-fit rounded-2xl border border-store-charcoal/10 p-6">
-        <p className="font-store-sans text-[11px] uppercase tracking-[0.16em] text-store-charcoal/45">
-          Resumo
-        </p>
-        <div className="mt-4 flex items-center justify-between font-store-sans text-sm">
-          <span className="text-store-charcoal/60">Subtotal</span>
-          <span className="text-store-charcoal">{formatCurrency(subtotal)}</span>
+      <aside className="h-fit space-y-5 rounded-2xl border border-store-charcoal/10 p-6">
+        <CartCouponField />
+
+        <div>
+          <p className="font-store-sans text-[11px] uppercase tracking-[0.16em] text-store-charcoal/45">
+            Resumo
+          </p>
+          <div className="mt-4 space-y-3 font-store-sans text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-store-charcoal/60">Subtotal</span>
+              <span className="text-store-charcoal">{formatCurrency(subtotal)}</span>
+            </div>
+            {discount > 0 && (
+              <div className="flex items-center justify-between text-emerald-700">
+                <span>Desconto</span>
+                <span>-{formatCurrency(discount)}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between border-t border-store-charcoal/10 pt-3 font-medium">
+              <span className="text-store-charcoal">Total</span>
+              <span className="text-store-charcoal">{formatCurrency(total)}</span>
+            </div>
+          </div>
         </div>
+
         <button
           type="button"
           disabled
-          className="mt-6 w-full bg-store-charcoal px-6 py-3.5 font-store-sans text-[10px] uppercase tracking-[0.2em] text-white opacity-50"
+          className="w-full bg-store-charcoal px-6 py-3.5 font-store-sans text-[10px] uppercase tracking-[0.2em] text-white opacity-50"
         >
           Finalizar compra (em breve)
         </button>

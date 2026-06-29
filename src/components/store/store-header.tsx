@@ -1,17 +1,25 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { StoreSearchTrigger } from "@/components/store/store-search-trigger";
+import { StoreSocialLinks } from "@/components/store/store-social-links";
 import { defaultHomeNavLinks, type StoreNavLink } from "@/lib/store/home-config";
+import {
+  hasLinkedSocialSettings,
+  type SocialSettingsValue,
+} from "@/lib/store/social-config";
 import { cn } from "@/lib/utils";
 
 interface StoreHeaderProps {
   cartCount?: number;
   navLinks?: StoreNavLink[];
+  socialSettings?: SocialSettingsValue;
 }
 
 export function StoreHeader({
   cartCount = 0,
   navLinks = [...defaultHomeNavLinks],
+  socialSettings,
 }: StoreHeaderProps) {
   return (
     <header className="bg-store-cream">
@@ -49,13 +57,21 @@ export function StoreHeader({
             ))}
           </nav>
 
-          <div className="flex items-center justify-end gap-5 sm:gap-6">
-            <Link
-              href="/produtos"
-              className="font-store-sans text-[11px] uppercase tracking-[0.18em] text-store-charcoal transition-opacity hover:opacity-60"
-            >
-              Buscar
-            </Link>
+          <div className="flex items-center justify-end gap-3.5 sm:gap-5">
+            {socialSettings && hasLinkedSocialSettings(socialSettings) ? (
+              <>
+                <StoreSocialLinks
+                  settings={socialSettings}
+                  onlyLinked
+                  variant="header"
+                />
+                <span
+                  aria-hidden
+                  className="h-3 w-px shrink-0 bg-store-charcoal/15"
+                />
+              </>
+            ) : null}
+            <StoreSearchTrigger />
             <Link
               href="/carrinho"
               className="font-store-sans text-[11px] uppercase tracking-[0.18em] text-store-charcoal transition-opacity hover:opacity-60"

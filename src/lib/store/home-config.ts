@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const HOME_SETTINGS_KEY = "home_page";
+export { HOME_SETTINGS_KEY } from "@/lib/store/store-settings-keys";
 export const MAX_HOME_NAV_ITEMS = 6;
 
 export const defaultHomeHero = {

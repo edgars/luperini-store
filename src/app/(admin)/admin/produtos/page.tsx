@@ -2,42 +2,39 @@ import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { ProductStatusBadge } from "@/components/admin/product-status-badge";
+import { ProductsTable } from "@/components/admin/products-table";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { db } from "@/db";
 import { categories, products, suppliers } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { countFeaturedProducts } from "@/lib/store/featured-products";
+import { cn } from "@/lib/utils";
 
 export default async function AdminProductsPage() {
   await requireAdmin();
 
-  const items = await db
-    .select({
-      id: products.id,
-      name: products.name,
-      status: products.status,
-      isFeatured: products.isFeatured,
-      purchaseSource: products.purchaseSource,
-      supplierName: suppliers.name,
-      salePrice: products.salePrice,
-      margin: products.margin,
-      createdAt: products.createdAt,
-      categoryName: categories.name,
-    })
-    .from(products)
-    .leftJoin(categories, eq(products.categoryId, categories.id))
-    .leftJoin(suppliers, eq(products.supplierId, suppliers.id))
-    .orderBy(desc(products.createdAt));
+  const [items, featuredCount] = await Promise.all([
+    db
+      .select({
+        id: products.id,
+        name: products.name,
+        status: products.status,
+        isFeatured: products.isFeatured,
+        purchaseSource: products.purchaseSource,
+        supplierId: products.supplierId,
+        supplierName: suppliers.name,
+        salePrice: products.salePrice,
+        margin: products.margin,
+        createdAt: products.createdAt,
+        categoryName: categories.name,
+      })
+      .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id))
+      .leftJoin(suppliers, eq(products.supplierId, suppliers.id))
+      .orderBy(desc(products.createdAt)),
+    countFeaturedProducts(),
+  ]);
 
   return (
     <div className="w-full space-y-6">
@@ -57,6 +54,12 @@ export default async function AdminProductsPage() {
               className={cn(buttonVariants({ variant: "outline" }))}
             >
               Categorias
+            </Link>
+            <Link
+              href="/admin/produtos/tags"
+              className={cn(buttonVariants({ variant: "outline" }))}
+            >
+              Tags
             </Link>
             <Link href="/admin/produtos/novo" className={cn(buttonVariants())}>
               Novo produto
@@ -78,61 +81,7 @@ export default async function AdminProductsPage() {
               </Link>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Produto</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Origem</TableHead>
-                  <TableHead>Preço</TableHead>
-                  <TableHead>Margem</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Destaque</TableHead>
-                  <TableHead>Criado em</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <Link
-                        href={`/admin/produtos/${item.id}`}
-                        className="font-medium hover:underline"
-                      >
-                        {item.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{item.categoryName ?? "—"}</TableCell>
-                    <TableCell>
-                      {item.purchaseSource === "in_house"
-                        ? "Fabricação própria"
-                        : (item.supplierName ?? "Fornecedor")}
-                    </TableCell>
-                    <TableCell>{formatCurrency(item.salePrice)}</TableCell>
-                    <TableCell
-                      className={
-                        item.margin < 20 ? "text-destructive" : undefined
-                      }
-                    >
-                      {item.margin}%
-                    </TableCell>
-                    <TableCell>
-                      <ProductStatusBadge status={item.status} />
-                    </TableCell>
-                    <TableCell>
-                      {item.isFeatured ? (
-                        <span className="text-xs font-medium text-amber-700">
-                          Em destaque
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
-                    <TableCell>{formatDate(item.createdAt)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <ProductsTable items={items} featuredCount={featuredCount} />
           )}
         </CardContent>
       </Card>

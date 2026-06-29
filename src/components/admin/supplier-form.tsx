@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useTransition } from "react";
+import { useActionState, useEffect, useRef, useTransition } from "react";
 import { toast } from "sonner";
 
 import {
@@ -30,29 +30,51 @@ const initialState: ActionResult = { success: false, error: "" };
 type SupplierFormProps = {
   supplier?: Supplier;
   onSuccess?: () => void;
+  layout?: "vertical" | "horizontal";
 };
 
-export function SupplierForm({ supplier, onSuccess }: SupplierFormProps) {
+export function SupplierForm({
+  supplier,
+  onSuccess,
+  layout = "vertical",
+}: SupplierFormProps) {
   const action = supplier
     ? updateSupplierAction.bind(null, supplier.id)
     : createSupplierAction;
 
   const [state, formAction, pending] = useActionState(action, initialState);
+  const onSuccessRef = useRef(onSuccess);
+  const handledSuccessRef = useRef(false);
+
+  onSuccessRef.current = onSuccess;
 
   useEffect(() => {
     if (state.success) {
-      toast.success(
-        supplier ? "Fornecedor atualizado." : "Fornecedor criado.",
-      );
-      onSuccess?.();
-    } else if (!state.success && state.error) {
+      if (!handledSuccessRef.current) {
+        handledSuccessRef.current = true;
+        toast.success(
+          supplier ? "Fornecedor atualizado." : "Fornecedor criado.",
+        );
+        onSuccessRef.current?.();
+      }
+      return;
+    }
+
+    handledSuccessRef.current = false;
+
+    if (!state.success && state.error) {
       toast.error(state.error);
     }
-  }, [state, supplier, onSuccess]);
+  }, [state, supplier]);
+
+  const horizontal = layout === "horizontal" && !supplier;
 
   return (
-    <form action={formAction} className="space-y-4">
-      <div className="space-y-2">
+    <form
+      action={formAction}
+      className={horizontal ? "grid gap-4 md:grid-cols-2 xl:grid-cols-4" : "space-y-4"}
+    >
+      <div className={horizontal ? "space-y-2 xl:col-span-2" : "space-y-2"}>
         <Label htmlFor={`name-${supplier?.id ?? "new"}`}>
           Nome <span className="text-destructive">*</span>
         </Label>
@@ -64,7 +86,7 @@ export function SupplierForm({ supplier, onSuccess }: SupplierFormProps) {
         />
       </div>
 
-      <div className="space-y-2">
+      <div className={horizontal ? "space-y-2" : "space-y-2"}>
         <Label htmlFor={`contactName-${supplier?.id ?? "new"}`}>
           Contato
         </Label>
@@ -75,7 +97,7 @@ export function SupplierForm({ supplier, onSuccess }: SupplierFormProps) {
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={horizontal ? "space-y-2" : "grid gap-4 sm:grid-cols-2"}>
         <div className="space-y-2">
           <Label htmlFor={`email-${supplier?.id ?? "new"}`}>E-mail</Label>
           <Input
@@ -96,7 +118,7 @@ export function SupplierForm({ supplier, onSuccess }: SupplierFormProps) {
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className={horizontal ? "space-y-2" : "space-y-2"}>
         <Label htmlFor={`document-${supplier?.id ?? "new"}`}>
           CNPJ / CPF
         </Label>
@@ -107,35 +129,53 @@ export function SupplierForm({ supplier, onSuccess }: SupplierFormProps) {
         />
       </div>
 
-      <div className="space-y-2">
+      <div
+        className={
+          horizontal
+            ? "space-y-2 md:col-span-2 xl:col-span-4"
+            : "space-y-2"
+        }
+      >
         <Label htmlFor={`notes-${supplier?.id ?? "new"}`}>Observações</Label>
         <Textarea
           id={`notes-${supplier?.id ?? "new"}`}
           name="notes"
-          rows={3}
+          rows={horizontal ? 2 : 3}
           defaultValue={supplier?.notes ?? ""}
         />
       </div>
 
-      <div className="flex items-start gap-3 rounded-lg border p-4">
-        <input
-          id={`isActive-${supplier?.id ?? "new"}`}
-          name="isActive"
-          type="checkbox"
-          defaultChecked={supplier?.isActive ?? true}
-          className="mt-1 h-4 w-4 rounded border-input"
-        />
-        <div className="space-y-1">
-          <Label htmlFor={`isActive-${supplier?.id ?? "new"}`}>Ativo</Label>
-          <p className="text-sm text-muted-foreground">
-            Fornecedores inativos não aparecem na seleção de produtos.
-          </p>
+      <div
+        className={
+          horizontal
+            ? "flex flex-col justify-between gap-4 rounded-lg border p-4 md:col-span-2 xl:col-span-3 xl:flex-row xl:items-center"
+            : "flex items-start gap-3 rounded-lg border p-4"
+        }
+      >
+        <div className="flex items-start gap-3">
+          <input
+            id={`isActive-${supplier?.id ?? "new"}`}
+            name="isActive"
+            type="checkbox"
+            defaultChecked={supplier?.isActive ?? true}
+            className="mt-1 h-4 w-4 rounded border-input"
+          />
+          <div className="space-y-1">
+            <Label htmlFor={`isActive-${supplier?.id ?? "new"}`}>Ativo</Label>
+            <p className="text-sm text-muted-foreground">
+              Fornecedores inativos não aparecem na seleção de produtos.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <Button type="submit" disabled={pending}>
-        {pending ? "Salvando..." : supplier ? "Salvar" : "Criar fornecedor"}
-      </Button>
+        <Button
+          type="submit"
+          disabled={pending}
+          className={horizontal ? "shrink-0 xl:self-end" : undefined}
+        >
+          {pending ? "Salvando..." : supplier ? "Salvar" : "Criar fornecedor"}
+        </Button>
+      </div>
     </form>
   );
 }

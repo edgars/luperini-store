@@ -5,4 +5,4 @@ export const STORE_NAV_LINKS = [
   { label: "Acessórios", href: "/produtos?categoria=acessorios" },
 ] as const;
 
-export const MAX_FEATURED_PRODUCTS = 5;
+export const MAX_FEATURED_PRODUCTS = 10;

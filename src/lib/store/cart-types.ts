@@ -9,6 +9,15 @@ export type CartItem = {
   imageUrl: string | null;
 };
 
+export type AppliedCartCoupon = {
+  code: string;
+  couponId: string;
+  type: "percentage" | "fixed";
+  value: number;
+  minOrderValue: number | null;
+};
+
 export type CartState = {
   items: CartItem[];
+  appliedCoupon?: AppliedCartCoupon | null;
 };

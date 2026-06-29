@@ -188,3 +188,8 @@
 .admin-theme :where(.font-sans, .font-heading, h1, h2, h3, h4, h5, h6, p, span, a, button, input, label, td, th) {
   font-family: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
 }
+
+/* Store typography preview — isolate from admin theme fonts */
+.typography-preview.store-theme :where(h1, h2, h3, h4, h5, h6, p, span, a, button, label) {
+  font-family: unset;
+}

@@ -1,21 +1,19 @@
-import Link from "next/link";
-
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { ProductForm } from "@/components/admin/product-form";
-import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { db } from "@/db";
-import { categories, products, suppliers } from "@/db/schema";
+import { categories, productTags, suppliers } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
-import { cn } from "@/lib/utils";
+import { asc } from "drizzle-orm";
 
 import { createProductAction } from "../actions";
 
 export default async function NewProductPage() {
   await requireAdmin();
-  const [allCategories, allSuppliers] = await Promise.all([
+  const [allCategories, allSuppliers, allTags] = await Promise.all([
     db.select().from(categories).orderBy(categories.name),
     db.select().from(suppliers).orderBy(suppliers.name),
+    db.select().from(productTags).orderBy(asc(productTags.name)),
   ]);
 
   return (
@@ -23,14 +21,6 @@ export default async function NewProductPage() {
       <AdminPageHeader
         title="Novo produto"
         description="Preencha os dados do produto e envie a imagem de capa."
-        actions={
-          <Link
-            href="/admin/produtos"
-            className={cn(buttonVariants({ variant: "outline" }))}
-          >
-            Voltar
-          </Link>
-        }
       />
 
       <Card className="w-full">
@@ -39,6 +29,7 @@ export default async function NewProductPage() {
             action={createProductAction}
             categories={allCategories}
             suppliers={allSuppliers}
+            tags={allTags}
             submitLabel="Criar produto"
           />
         </CardContent>

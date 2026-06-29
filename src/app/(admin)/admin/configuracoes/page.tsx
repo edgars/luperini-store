@@ -6,6 +6,45 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireAdmin } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
+const settingsSections = [
+  {
+    title: "Dados da loja",
+    description:
+      "Nome, e-mails, telefone e WhatsApp usados no site e comunicações.",
+    href: "/admin/configuracoes/loja",
+  },
+  {
+    title: "Redes sociais",
+    description:
+      "Instagram, TikTok e Shopee exibidos no rodapé e no site.",
+    href: "/admin/configuracoes/redes-sociais",
+  },
+  {
+    title: "Tipografia",
+    description:
+      "Fontes da loja — geral ou por H1, H2, H3, parágrafo e botões, com esquemas salvos.",
+    href: "/admin/configuracoes/tipografia",
+  },
+  {
+    title: "Envio e frete",
+    description:
+      "CEP e endereço de origem, frete fixo ou grátis, prazos e dimensões padrão da embalagem.",
+    href: "/admin/configuracoes/envio",
+  },
+  {
+    title: "Integrações",
+    description:
+      "Melhor Envio, Mercado Pago, Stripe, Resend e ViaCEP — com status das variáveis de ambiente.",
+    href: "/admin/configuracoes/integracoes",
+  },
+  {
+    title: "Página inicial",
+    description:
+      "Menu de categorias, textos do hero, botão de ação e imagem principal — com pré-visualização.",
+    href: "/admin/configuracoes/home",
+  },
+] as const;
+
 export default async function AdminSettingsPage() {
   await requireAdmin();
 
@@ -13,27 +52,25 @@ export default async function AdminSettingsPage() {
     <div className="w-full space-y-6">
       <AdminPageHeader
         title="Configurações"
-        description="Preferências gerais da loja e integrações."
+        description="Preferências da loja, envio e integrações."
       />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Página inicial</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Menu de categorias, textos do hero, botão de ação e imagem
-              principal — com pré-visualização antes de salvar.
-            </p>
-            <Link
-              href="/admin/configuracoes/home"
-              className={cn(buttonVariants())}
-            >
-              Configurar home
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
+        {settingsSections.map((section) => (
+          <Card key={section.href}>
+            <CardHeader>
+              <CardTitle>{section.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                {section.description}
+              </p>
+              <Link href={section.href} className={cn(buttonVariants())}>
+                Configurar
+              </Link>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );

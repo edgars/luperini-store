@@ -6,6 +6,7 @@ import {
   Package,
   Settings,
   ShoppingCart,
+  Tag,
   Ticket,
   Truck,
   Users,
@@ -42,6 +43,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Vendas",
     items: [
       { href: "/admin/pedidos", label: "Pedidos", icon: ShoppingCart },
+      { href: "/admin/cupons", label: "Cupons", icon: Tag },
       { href: "/admin/clientes", label: "Clientes", icon: Users },
       { href: "/admin/envios", label: "Envios", icon: Truck },
     ],

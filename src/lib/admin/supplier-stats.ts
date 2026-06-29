@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { eq, isNotNull, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { products, supplierPurchases, suppliers } from "@/db/schema";
@@ -67,5 +67,73 @@ export async function getSupplierDetailStats(
       totalPurchased: 0,
       averageMargin: null,
     }
+  );
+}
+
+export type SupplierLinkedProduct = {
+  supplierId: string;
+  id: string;
+  name: string;
+  salePrice: number;
+  margin: number;
+  status: string;
+  purchaseCount: number;
+  totalPurchased: number;
+};
+
+export async function getSupplierLinkedProducts(): Promise<
+  SupplierLinkedProduct[]
+> {
+  const rows = await db
+    .select({
+      supplierId: products.supplierId,
+      id: products.id,
+      name: products.name,
+      salePrice: products.salePrice,
+      margin: products.margin,
+      status: products.status,
+      purchaseCount: sql<number>`count(${supplierPurchases.id})::int`,
+      totalPurchased: sql<number>`coalesce(sum(${supplierPurchases.totalCost}), 0)::int`,
+    })
+    .from(products)
+    .leftJoin(
+      supplierPurchases,
+      eq(supplierPurchases.productId, products.id),
+    )
+    .where(isNotNull(products.supplierId))
+    .groupBy(products.id)
+    .orderBy(products.name);
+
+  return rows.flatMap((row) =>
+    row.supplierId
+      ? [
+          {
+            supplierId: row.supplierId,
+            id: row.id,
+            name: row.name,
+            salePrice: row.salePrice,
+            margin: row.margin,
+            status: row.status,
+            purchaseCount: row.purchaseCount,
+            totalPurchased: row.totalPurchased,
+          },
+        ]
+      : [],
+  );
+}
+
+export function groupProductsBySupplier(
+  products: SupplierLinkedProduct[],
+): Record<string, SupplierLinkedProduct[]> {
+  return products.reduce<Record<string, SupplierLinkedProduct[]>>(
+    (accumulator, product) => {
+      if (!product.supplierId) return accumulator;
+      if (!accumulator[product.supplierId]) {
+        accumulator[product.supplierId] = [];
+      }
+      accumulator[product.supplierId].push(product);
+      return accumulator;
+    },
+    {},
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { AdminHeader } from "@/components/admin/admin-header";
+import { AdminPageNavigation } from "@/components/admin/admin-page-navigation";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import {
   Dialog,
@@ -61,6 +62,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             onOpenMobileMenu={() => setMobileOpen(true)}
           />
           <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
+            <AdminPageNavigation />
             {children}
           </main>
         </div>

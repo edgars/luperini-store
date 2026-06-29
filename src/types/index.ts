@@ -3,11 +3,14 @@ import {
   auditLog,
   categories,
   coupons,
+  couponPartners,
   orderItems,
   orders,
   payments,
   productImages,
+  productSocialEmbeds,
   products,
+  productTags,
   productVariants,
   shipments,
   supplierPurchases,
@@ -39,11 +42,17 @@ export type NewPurchaseContact = typeof purchaseContacts.$inferInsert;
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
 
+export type ProductTag = typeof productTags.$inferSelect;
+export type NewProductTag = typeof productTags.$inferInsert;
+
 export type ProductVariant = typeof productVariants.$inferSelect;
 export type NewProductVariant = typeof productVariants.$inferInsert;
 
 export type ProductImage = typeof productImages.$inferSelect;
 export type NewProductImage = typeof productImages.$inferInsert;
+
+export type ProductSocialEmbed = typeof productSocialEmbeds.$inferSelect;
+export type NewProductSocialEmbed = typeof productSocialEmbeds.$inferInsert;
 
 export type Order = typeof orders.$inferSelect;
 export type NewOrder = typeof orders.$inferInsert;
@@ -65,6 +74,9 @@ export type NewTicketMessage = typeof ticketMessages.$inferInsert;
 
 export type Coupon = typeof coupons.$inferSelect;
 export type NewCoupon = typeof coupons.$inferInsert;
+
+export type CouponPartner = typeof couponPartners.$inferSelect;
+export type NewCouponPartner = typeof couponPartners.$inferInsert;
 
 export type AuditLogEntry = typeof auditLog.$inferSelect;
 export type NewAuditLogEntry = typeof auditLog.$inferInsert;

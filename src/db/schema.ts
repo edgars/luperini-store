@@ -5,6 +5,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
@@ -21,6 +22,11 @@ export const imageTypeEnum = pgEnum("image_type", [
   "cover",
   "gallery",
   "thumbnail",
+]);
+
+export const socialPlatformEnum = pgEnum("social_platform", [
+  "instagram",
+  "tiktok",
 ]);
 
 export const orderStatusEnum = pgEnum("order_status", [
@@ -80,6 +86,14 @@ export const couponTypeEnum = pgEnum("coupon_type", ["percentage", "fixed"]);
 export const purchaseSourceEnum = pgEnum("purchase_source", [
   "supplier",
   "in_house",
+]);
+
+export const productSeasonEnum = pgEnum("product_season", [
+  "spring",
+  "summer",
+  "autumn",
+  "winter",
+  "all_season",
 ]);
 
 export const auditActionEnum = pgEnum("audit_action", [
@@ -183,6 +197,8 @@ export const products = pgTable("products", {
   supplierId: uuid("supplier_id").references(() => suppliers.id, {
     onDelete: "set null",
   }),
+  season: productSeasonEnum("season").default("all_season").notNull(),
+  fakeOrderCount: integer("fake_order_count").default(0).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -190,6 +206,28 @@ export const products = pgTable("products", {
     .defaultNow()
     .notNull(),
 });
+
+export const productTags = pgTable("product_tags", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const productTagAssignments = pgTable(
+  "product_tag_assignments",
+  {
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    tagId: uuid("tag_id")
+      .notNull()
+      .references(() => productTags.id, { onDelete: "cascade" }),
+  },
+  (table) => [primaryKey({ columns: [table.productId, table.tagId] })],
+);
 
 export const productVariants = pgTable("product_variants", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -220,6 +258,19 @@ export const productImages = pgTable("product_images", {
   originalHeight: integer("original_height"),
 });
 
+export const productSocialEmbeds = pgTable("product_social_embeds", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  productId: uuid("product_id")
+    .notNull()
+    .references(() => products.id, { onDelete: "cascade" }),
+  platform: socialPlatformEnum("platform").default("instagram").notNull(),
+  url: text("url").notNull(),
+  position: integer("position").default(0).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 export const supplierPurchases = pgTable("supplier_purchases", {
   id: uuid("id").defaultRandom().primaryKey(),
   supplierId: uuid("supplier_id").references(() => suppliers.id, {
@@ -241,6 +292,21 @@ export const supplierPurchases = pgTable("supplier_purchases", {
     .notNull(),
 });
 
+export const couponPartners = pgTable("coupon_partners", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  handle: text("handle"),
+  email: text("email"),
+  notes: text("notes"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 export const coupons = pgTable("coupons", {
   id: uuid("id").defaultRandom().primaryKey(),
   code: text("code").notNull().unique(),
@@ -251,7 +317,17 @@ export const coupons = pgTable("coupons", {
   usedCount: integer("used_count").default(0).notNull(),
   validFrom: timestamp("valid_from", { withTimezone: true }),
   validUntil: timestamp("valid_until", { withTimezone: true }),
+  partnerId: uuid("partner_id").references(() => couponPartners.id, {
+    onDelete: "set null",
+  }),
+  description: text("description"),
   isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const orders = pgTable("orders", {
@@ -452,8 +528,28 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   }),
   variants: many(productVariants),
   images: many(productImages),
+  socialEmbeds: many(productSocialEmbeds),
   purchases: many(supplierPurchases),
+  tagAssignments: many(productTagAssignments),
 }));
+
+export const productTagsRelations = relations(productTags, ({ many }) => ({
+  assignments: many(productTagAssignments),
+}));
+
+export const productTagAssignmentsRelations = relations(
+  productTagAssignments,
+  ({ one }) => ({
+    product: one(products, {
+      fields: [productTagAssignments.productId],
+      references: [products.id],
+    }),
+    tag: one(productTags, {
+      fields: [productTagAssignments.tagId],
+      references: [productTags.id],
+    }),
+  }),
+);
 
 export const productVariantsRelations = relations(
   productVariants,
@@ -471,6 +567,16 @@ export const productImagesRelations = relations(productImages, ({ one }) => ({
     references: [products.id],
   }),
 }));
+
+export const productSocialEmbedsRelations = relations(
+  productSocialEmbeds,
+  ({ one }) => ({
+    product: one(products, {
+      fields: [productSocialEmbeds.productId],
+      references: [products.id],
+    }),
+  }),
+);
 
 export const supplierPurchasesRelations = relations(
   supplierPurchases,
@@ -498,6 +604,21 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   items: many(orderItems),
   payments: many(payments),
   shipments: many(shipments),
+}));
+
+export const couponPartnersRelations = relations(
+  couponPartners,
+  ({ many }) => ({
+    coupons: many(coupons),
+  }),
+);
+
+export const couponsRelations = relations(coupons, ({ one, many }) => ({
+  partner: one(couponPartners, {
+    fields: [coupons.partnerId],
+    references: [couponPartners.id],
+  }),
+  orders: many(orders),
 }));
 
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({

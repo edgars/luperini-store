@@ -3,6 +3,7 @@ import {
   DashboardChartsRow,
   DashboardInsightsRow,
 } from "@/components/admin/dashboard/charts-row";
+import { DashboardCouponsSection } from "@/components/admin/dashboard/coupons-section";
 import {
   DashboardPageActions,
   DashboardStatsCards,
@@ -32,6 +33,10 @@ export default async function AdminDashboardPage() {
 
       <DashboardChartsRow />
       <DashboardInsightsRow />
+      <DashboardCouponsSection
+        summary={stats.couponSummary}
+        topCoupons={stats.topCoupons}
+      />
       <DashboardTables
         recentOrders={stats.recentOrders}
         topProducts={stats.topProducts}

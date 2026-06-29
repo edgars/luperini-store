@@ -1,18 +1,31 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { CategorySelectField } from "@/components/admin/category-select-field";
+import { ProductGalleryImagesField } from "@/components/admin/product-gallery-images-field";
+import { ProductSocialLinksField } from "@/components/admin/product-social-links-field";
 import { ProductImageUploadField } from "@/components/admin/product-image-upload-field";
+import { ProductTagsField } from "@/components/admin/product-tags-field";
 import { PurchaseSourceField } from "@/components/admin/purchase-source-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { calculateMarginPercent } from "@/lib/prices";
+import { PRODUCT_SEASONS } from "@/lib/store/product-season";
 import { cn, formatCurrency } from "@/lib/utils";
-import type { ActionResult, Category, Product, ProductImage, Supplier } from "@/types";
+import type {
+  ActionResult,
+  Category,
+  Product,
+  ProductImage,
+  ProductSocialEmbed,
+  ProductTag,
+  Supplier,
+} from "@/types";
 
 type ProductFormProps = {
   action: (
@@ -21,10 +34,17 @@ type ProductFormProps = {
   ) => Promise<ActionResult>;
   categories: Category[];
   suppliers: Supplier[];
+  tags?: ProductTag[];
+  defaultTagIds?: string[];
   initialData?: Product & {
     stock?: number;
     coverImage?: ProductImage | null;
+    galleryImages?: ProductImage[];
+    socialLinks?: ProductSocialEmbed[];
   };
+  onDeleteGalleryImage?: (
+    imageId: string,
+  ) => Promise<{ success: boolean; error?: string }>;
   submitLabel: string;
 };
 
@@ -34,9 +54,13 @@ export function ProductForm({
   action,
   categories,
   suppliers,
+  tags = [],
+  defaultTagIds = [],
   initialData,
+  onDeleteGalleryImage,
   submitLabel,
 }: ProductFormProps) {
+  const router = useRouter();
   const [state, formAction, pending] = useActionState(action, initialState);
   const [costPrice, setCostPrice] = useState(
     initialData ? (initialData.costPrice / 100).toFixed(2).replace(".", ",") : "",
@@ -59,10 +83,11 @@ export function ProductForm({
   useEffect(() => {
     if (state.success) {
       toast.success("Produto salvo com sucesso.");
+      router.refresh();
     } else if (!state.success && state.error) {
       toast.error(state.error);
     }
-  }, [state]);
+  }, [router, state]);
 
   return (
     <form action={formAction} className="space-y-8">
@@ -95,6 +120,24 @@ export function ProductForm({
           categories={categories}
           defaultValue={initialData?.categoryId}
         />
+
+        <div className="space-y-2">
+          <Label htmlFor="season">Temporada</Label>
+          <select
+            id="season"
+            name="season"
+            defaultValue={initialData?.season ?? "all_season"}
+            className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
+          >
+            {PRODUCT_SEASONS.map((season) => (
+              <option key={season.value} value={season.value}>
+                {season.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <ProductTagsField tags={tags} defaultTagIds={defaultTagIds} />
 
         <PurchaseSourceField
           suppliers={suppliers}
@@ -201,6 +244,22 @@ export function ProductForm({
         </div>
 
         <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="fakeOrderCount">Quantidade já compradas (vitrine)</Label>
+          <Input
+            id="fakeOrderCount"
+            name="fakeOrderCount"
+            type="number"
+            min={0}
+            step={1}
+            defaultValue={initialData?.fakeOrderCount ?? 0}
+          />
+          <p className="text-sm text-muted-foreground">
+            Número exibido na página do produto como prova social. Não usa
+            pedidos reais — deixe 0 para ocultar.
+          </p>
+        </div>
+
+        <div className="space-y-2 md:col-span-2">
           <div className="flex items-start gap-3 rounded-lg border p-4">
             <input
               id="isFeatured"
@@ -224,6 +283,15 @@ export function ProductForm({
           label="Imagem de capa"
           existingUrl={initialData?.coverImage?.url}
           existingAlt={initialData?.coverImage?.alt ?? initialData?.name}
+        />
+
+        <ProductGalleryImagesField
+          existingImages={initialData?.galleryImages ?? []}
+          onDeleteImage={onDeleteGalleryImage}
+        />
+
+        <ProductSocialLinksField
+          existingLinks={initialData?.socialLinks ?? []}
         />
       </section>
 

@@ -4,9 +4,11 @@ import { db } from "@/db";
 import {
   categories,
   productImages,
+  productSocialEmbeds,
   products,
   productVariants,
 } from "@/db/schema";
+import type { SocialPlatform } from "@/lib/social-video-links";
 
 export type StoreProductVariant = {
   id: string;
@@ -19,10 +21,17 @@ export type StoreProductVariant = {
 export type StoreProductImage = {
   id: string;
   url: string;
+  originalUrl: string | null;
   alt: string | null;
   type: "cover" | "gallery" | "thumbnail";
   width: number | null;
   height: number | null;
+};
+
+export type StoreProductSocialEmbed = {
+  id: string;
+  url: string;
+  platform: SocialPlatform;
 };
 
 export type StoreProductDetail = {
@@ -31,8 +40,10 @@ export type StoreProductDetail = {
   slug: string;
   description: string | null;
   sku: string | null;
+  fakeOrderCount: number;
   category: { name: string; slug: string } | null;
   images: StoreProductImage[];
+  socialEmbeds: StoreProductSocialEmbed[];
   variants: StoreProductVariant[];
 };
 
@@ -46,6 +57,7 @@ export async function getProductBySlug(
       slug: products.slug,
       description: products.description,
       sku: products.sku,
+      fakeOrderCount: products.fakeOrderCount,
       categoryName: categories.name,
       categorySlug: categories.slug,
     })
@@ -58,7 +70,7 @@ export async function getProductBySlug(
     return null;
   }
 
-  const [variants, images] = await Promise.all([
+  const [variants, images, socialEmbeds] = await Promise.all([
     db
       .select({
         id: productVariants.id,
@@ -74,6 +86,7 @@ export async function getProductBySlug(
       .select({
         id: productImages.id,
         url: productImages.url,
+        originalUrl: productImages.originalUrl,
         alt: productImages.alt,
         type: productImages.type,
         width: productImages.width,
@@ -83,6 +96,16 @@ export async function getProductBySlug(
       .from(productImages)
       .where(eq(productImages.productId, product.id))
       .orderBy(asc(productImages.position)),
+    db
+      .select({
+        id: productSocialEmbeds.id,
+        url: productSocialEmbeds.url,
+        platform: productSocialEmbeds.platform,
+        position: productSocialEmbeds.position,
+      })
+      .from(productSocialEmbeds)
+      .where(eq(productSocialEmbeds.productId, product.id))
+      .orderBy(asc(productSocialEmbeds.position)),
   ]);
 
   const sortedImages = [...images].sort((a, b) => {
@@ -97,17 +120,26 @@ export async function getProductBySlug(
     slug: product.slug,
     description: product.description,
     sku: product.sku,
+    fakeOrderCount: product.fakeOrderCount ?? 0,
     category:
       product.categoryName && product.categorySlug
         ? { name: product.categoryName, slug: product.categorySlug }
         : null,
-    images: sortedImages.map(({ id, url, alt, type, width, height }) => ({
+    images: sortedImages.map(
+      ({ id, url, originalUrl, alt, type, width, height }) => ({
+        id,
+        url,
+        originalUrl,
+        alt,
+        type,
+        width,
+        height,
+      }),
+    ),
+    socialEmbeds: socialEmbeds.map(({ id, url, platform }) => ({
       id,
       url,
-      alt,
-      type,
-      width,
-      height,
+      platform,
     })),
     variants: variants.map((variant) => ({
       ...variant,

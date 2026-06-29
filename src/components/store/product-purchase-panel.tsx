@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { useCart } from "@/components/store/cart-provider";
+import { ProductSocialProof } from "@/components/store/product-social-proof";
 import type { StoreProductDetail } from "@/lib/store/get-product-by-slug";
 import {
   findVariantBySelections,
@@ -225,6 +226,11 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
           </p>
         </div>
       </div>
+
+      <ProductSocialProof
+        productSlug={product.slug}
+        fakeOrderCount={product.fakeOrderCount}
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <button

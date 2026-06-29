@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Geist, Geist_Mono, Jost } from "next/font/google";
 
 import { Toaster } from "@/components/ui/sonner";
+import { storeFontVariables } from "@/lib/fonts/store-fonts";
 
 import "./globals.css";
+import "./store-external-fonts.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,7 +48,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${jost.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${jost.variable} ${storeFontVariables} antialiased`}
       >
         {children}
         <Toaster richColors position="top-right" />

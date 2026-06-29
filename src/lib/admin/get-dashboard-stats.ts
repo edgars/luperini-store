@@ -2,6 +2,10 @@ import { count, desc, eq, sum } from "drizzle-orm";
 
 import { db } from "@/db";
 import { orderItems, orders, users } from "@/db/schema";
+import {
+  getCouponAnalyticsSummary,
+  getTopCoupons,
+} from "@/lib/admin/coupon-stats";
 
 export async function getDashboardStats() {
   const [
@@ -10,6 +14,8 @@ export async function getDashboardStats() {
     [{ revenueTotal }],
     recentOrders,
     topProducts,
+    couponSummary,
+    topCoupons,
   ] = await Promise.all([
     db.select({ orderCount: count() }).from(orders),
     db.select({ userCount: count() }).from(users),
@@ -39,6 +45,8 @@ export async function getDashboardStats() {
       .groupBy(orderItems.productName)
       .orderBy(desc(sum(orderItems.quantity)))
       .limit(8),
+    getCouponAnalyticsSummary(),
+    getTopCoupons(5),
   ]);
 
   return {
@@ -51,6 +59,8 @@ export async function getDashboardStats() {
       sold: Number(item.sold ?? 0),
       sales: Number(item.sales ?? 0),
     })),
+    couponSummary,
+    topCoupons,
   };
 }
 
