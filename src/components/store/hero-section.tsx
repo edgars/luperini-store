@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { HeroSlider } from "@/components/store/hero-slider";
 import type { HomePageSettingsValue, StoreNavLink } from "@/lib/store/home-config";
 
 type HeroSectionProps = {
@@ -8,6 +9,10 @@ type HeroSectionProps = {
 };
 
 export function HeroSection({ hero }: HeroSectionProps) {
+  if (hero.mode === "slider" && hero.slides.length > 0) {
+    return <HeroSlider slides={hero.slides} />;
+  }
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
       <div className="grid items-start gap-10 lg:grid-cols-[2fr_3fr] lg:gap-14 xl:gap-20">

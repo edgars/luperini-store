@@ -10,6 +10,8 @@ export const storeFontIds = [
   "stack_sans",
   "gelasio",
   "elms_sans",
+  "hanken_grotesk",
+  "fraunces",
 ] as const;
 
 export type StoreFontId = (typeof storeFontIds)[number];
@@ -88,6 +90,16 @@ export const storeFontOptions: {
   { id: "stack_sans", label: "Stack Sans", description: "Stack Sans Text" },
   { id: "gelasio", label: "Gelasio" },
   { id: "elms_sans", label: "Elma Sans", description: "Elms Sans" },
+  {
+    id: "hanken_grotesk",
+    label: "Hanken Grotesk",
+    description: "Sans geométrica, boa para textos",
+  },
+  {
+    id: "fraunces",
+    label: "Fraunces",
+    description: "Serif expressiva, boa para títulos",
+  },
 ];
 
 export const typographyElementLabels: Record<TypographyElement, string> = {
@@ -133,6 +145,9 @@ export function resolveStoreFontFamily(
       '"Stack Sans Text", ui-sans-serif, system-ui, sans-serif',
     gelasio: "var(--font-gelasio), ui-serif, Georgia, serif",
     elms_sans: '"Elms Sans", ui-sans-serif, system-ui, sans-serif',
+    hanken_grotesk:
+      "var(--font-hanken-grotesk), ui-sans-serif, system-ui, sans-serif",
+    fraunces: "var(--font-fraunces), ui-serif, Georgia, serif",
   };
 
   return families[fontId];

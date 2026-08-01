@@ -1,6 +1,8 @@
 import {
   Bricolage_Grotesque,
+  Fraunces,
   Gelasio,
+  Hanken_Grotesk,
   Inter,
   Poppins,
 } from "next/font/google";
@@ -26,6 +28,19 @@ export const storeGelasio = Gelasio({
   display: "swap",
 });
 
+export const storeHankenGrotesk = Hanken_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-hanken-grotesk",
+  display: "swap",
+});
+
+export const storeFraunces = Fraunces({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  variable: "--font-fraunces",
+  display: "swap",
+});
+
 export const storeAdminFont = Bricolage_Grotesque({
   subsets: ["latin"],
   variable: "--font-bricolage",
@@ -37,5 +52,7 @@ export const storeFontVariables = [
   storePoppins.variable,
   storeInter.variable,
   storeGelasio.variable,
+  storeHankenGrotesk.variable,
+  storeFraunces.variable,
   storeAdminFont.variable,
 ].join(" ");

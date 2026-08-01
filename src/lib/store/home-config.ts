@@ -2,8 +2,13 @@ import { z } from "zod";
 
 export { HOME_SETTINGS_KEY } from "@/lib/store/store-settings-keys";
 export const MAX_HOME_NAV_ITEMS = 6;
+export const MAX_HERO_SLIDES = 8;
+
+export const heroModes = ["split", "slider"] as const;
+export type HeroMode = (typeof heroModes)[number];
 
 export const defaultHomeHero = {
+  mode: "split" as HeroMode,
   eyebrow: "Lookbook 02 / 26",
   title: "Outono Inverno",
   titleAccent: "em alta",
@@ -12,7 +17,8 @@ export const defaultHomeHero = {
   ctaLabel: "Ver lookbook",
   ctaHref: "/produtos?sort=lookbook",
   imageUrl: "/images-main/home-left-hero.png",
-} as const;
+  slides: [] as HeroSlide[],
+};
 
 export const defaultHomeNavLinks = [
   { label: "Novidades", href: "/produtos?sort=novidades" },
@@ -21,7 +27,19 @@ export const defaultHomeNavLinks = [
   { label: "Acessórios", href: "/produtos?categoria=acessorios" },
 ] as const;
 
+export const heroSlideSchema = z.object({
+  id: z.string().min(1),
+  imageUrl: z.string().min(1, "Informe a imagem do slide"),
+  title: z.string().max(120).optional().default(""),
+  subtitle: z.string().max(160).optional().default(""),
+  ctaLabel: z.string().max(60).optional().default(""),
+  ctaHref: z.string().max(400).optional().default(""),
+});
+
+export type HeroSlide = z.infer<typeof heroSlideSchema>;
+
 const heroSchema = z.object({
+  mode: z.enum(heroModes).default("split"),
   eyebrow: z.string().min(1, "Informe o rótulo superior"),
   title: z.string().min(1, "Informe o título"),
   titleAccent: z.string().min(1, "Informe o destaque do título"),
@@ -29,6 +47,10 @@ const heroSchema = z.object({
   ctaLabel: z.string().min(1, "Informe o texto do botão"),
   ctaHref: z.string().min(1, "Informe o link do botão"),
   imageUrl: z.string().min(1, "Informe a imagem do hero"),
+  slides: z
+    .array(heroSlideSchema)
+    .max(MAX_HERO_SLIDES, `Máximo de ${MAX_HERO_SLIDES} slides no carrossel`)
+    .default([]),
 });
 
 export const homePageSettingsSchema = z.object({
@@ -52,8 +74,18 @@ export type HomePageConfig = {
 
 export const defaultHomePageSettings: HomePageSettingsValue = {
   navCategoryIds: [],
-  hero: { ...defaultHomeHero },
+  hero: { ...defaultHomeHero, slides: [] },
 };
+
+export function createHeroSlideId(): string {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
+  }
+  return `slide-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
 
 export function parseHomePageSettingsValue(
   value: unknown,

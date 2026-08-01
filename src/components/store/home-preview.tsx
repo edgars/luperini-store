@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { HeroSlider } from "@/components/store/hero-slider";
 import type { HomePageConfig } from "@/lib/store/home-config";
 import { cn } from "@/lib/utils";
 
@@ -91,46 +92,50 @@ export function HomePreview({
         )}
       </header>
 
-      <section className="px-4 py-6">
-        <div className="grid items-start gap-5 lg:grid-cols-[2fr_3fr]">
-          <div className="text-center lg:text-left">
-            <p className="font-store-sans text-[9px] uppercase tracking-[0.18em] text-store-charcoal/45">
-              {hero.eyebrow}
-            </p>
-            <h2 className="mt-3 font-store-serif text-2xl leading-tight text-store-charcoal sm:text-3xl">
-              {hero.title}
-              <span className="mt-1 block font-store-serif italic text-store-gold">
-                {hero.titleAccent}
-              </span>
-            </h2>
-            <div
-              aria-hidden
-              className="mx-auto mt-4 h-px w-8 bg-store-charcoal/25 lg:mx-0"
-            />
-            <p className="mt-4 font-store-sans text-[11px] leading-relaxed text-store-charcoal/65">
-              {hero.description}
-            </p>
-            <PreviewLink
-              href={hero.ctaHref}
-              preview={preview}
-              className="mt-5 inline-block bg-store-charcoal px-5 py-2.5 font-store-sans text-[8px] uppercase tracking-[0.18em] text-white"
-            >
-              {hero.ctaLabel}
-            </PreviewLink>
-          </div>
+      {hero.mode === "slider" && hero.slides.length > 0 ? (
+        <HeroSlider slides={hero.slides} preview={preview} compact autoplay={false} />
+      ) : (
+        <section className="px-4 py-6">
+          <div className="grid items-start gap-5 lg:grid-cols-[2fr_3fr]">
+            <div className="text-center lg:text-left">
+              <p className="font-store-sans text-[9px] uppercase tracking-[0.18em] text-store-charcoal/45">
+                {hero.eyebrow}
+              </p>
+              <h2 className="mt-3 font-store-serif text-2xl leading-tight text-store-charcoal sm:text-3xl">
+                {hero.title}
+                <span className="mt-1 block font-store-serif italic text-store-gold">
+                  {hero.titleAccent}
+                </span>
+              </h2>
+              <div
+                aria-hidden
+                className="mx-auto mt-4 h-px w-8 bg-store-charcoal/25 lg:mx-0"
+              />
+              <p className="mt-4 font-store-sans text-[11px] leading-relaxed text-store-charcoal/65">
+                {hero.description}
+              </p>
+              <PreviewLink
+                href={hero.ctaHref}
+                preview={preview}
+                className="mt-5 inline-block bg-store-charcoal px-5 py-2.5 font-store-sans text-[8px] uppercase tracking-[0.18em] text-white"
+              >
+                {hero.ctaLabel}
+              </PreviewLink>
+            </div>
 
-          <div className="relative aspect-[3/4] min-h-[220px] w-full overflow-hidden rounded-xl">
-            <Image
-              src={hero.imageUrl}
-              alt={hero.title}
-              fill
-              unoptimized={hero.imageUrl.startsWith("blob:")}
-              sizes="400px"
-              className="object-cover object-center"
-            />
+            <div className="relative aspect-[3/4] min-h-[220px] w-full overflow-hidden rounded-xl">
+              <Image
+                src={hero.imageUrl}
+                alt={hero.title}
+                fill
+                unoptimized={hero.imageUrl.startsWith("blob:")}
+                sizes="400px"
+                className="object-cover object-center"
+              />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }

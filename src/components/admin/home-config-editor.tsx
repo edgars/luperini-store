@@ -7,6 +7,10 @@ import { useActionState, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { saveHomeConfigAction } from "@/app/(admin)/admin/configuracoes/home/actions";
+import {
+  HeroSlidesEditor,
+  type EditableHeroSlide,
+} from "@/components/admin/hero-slides-editor";
 import { HomePreview } from "@/components/store/home-preview";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   defaultHomeNavLinks,
   MAX_HOME_NAV_ITEMS,
+  type HeroMode,
   type HomePageSettingsValue,
 } from "@/lib/store/home-config";
 import type { ActionResult, Category } from "@/types";
@@ -46,6 +51,13 @@ export function HomeConfigEditor({
   const [hero, setHero] = useState(initialSettings.hero);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [pickerValue, setPickerValue] = useState("");
+  const [heroMode, setHeroMode] = useState<HeroMode>(
+    initialSettings.hero.mode ?? "split",
+  );
+  const [slides, setSlides] = useState<EditableHeroSlide[]>(
+    () =>
+      (initialSettings.hero.slides ?? []).map((slide) => ({ ...slide })) as EditableHeroSlide[],
+  );
 
   const categoryMap = useMemo(
     () => new Map(categories.map((category) => [category.id, category])),
@@ -71,10 +83,19 @@ export function HomeConfigEditor({
           : [...defaultHomeNavLinks],
       hero: {
         ...hero,
+        mode: heroMode,
         imageUrl: imagePreview ?? hero.imageUrl,
+        slides: slides.map((slide) => ({
+          id: slide.id,
+          imageUrl: slide.previewUrl || slide.imageUrl,
+          title: slide.title ?? "",
+          subtitle: slide.subtitle ?? "",
+          ctaLabel: slide.ctaLabel ?? "",
+          ctaHref: slide.ctaHref ?? "",
+        })),
       },
     };
-  }, [navCategoryIds, categoryMap, hero, imagePreview]);
+  }, [navCategoryIds, categoryMap, hero, imagePreview, heroMode, slides]);
 
   useEffect(() => {
     if (state.success) {
@@ -149,6 +170,23 @@ export function HomeConfigEditor({
           readOnly
         />
         <input type="hidden" name="heroImageUrl" value={hero.imageUrl} readOnly />
+        <input type="hidden" name="heroMode" value={heroMode} readOnly />
+        <input
+          type="hidden"
+          name="heroSlides"
+          value={JSON.stringify(
+            slides.map((slide) => ({
+              id: slide.id,
+              imageUrl: slide.imageUrl ?? "",
+              title: slide.title ?? "",
+              subtitle: slide.subtitle ?? "",
+              ctaLabel: slide.ctaLabel ?? "",
+              ctaHref: slide.ctaHref ?? "",
+              fileFieldName: slide.fileFieldName ?? null,
+            })),
+          )}
+          readOnly
+        />
 
         <section className="space-y-4 rounded-xl border p-5">
           <div>
@@ -241,9 +279,50 @@ export function HomeConfigEditor({
 
         <section className="space-y-4 rounded-xl border p-5">
           <div>
+            <h2 className="text-lg font-semibold">Modo do hero</h2>
+            <p className="text-sm text-muted-foreground">
+              Escolha o formato do bloco principal da home.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <Button
+              type="button"
+              variant={heroMode === "split" ? "default" : "outline"}
+              onClick={() => setHeroMode("split")}
+            >
+              Padrão — texto + imagem
+            </Button>
+            <Button
+              type="button"
+              variant={heroMode === "slider" ? "default" : "outline"}
+              onClick={() => setHeroMode("slider")}
+            >
+              Carrossel de imagens (banner)
+            </Button>
+          </div>
+        </section>
+
+        {heroMode === "slider" ? (
+          <section className="space-y-4 rounded-xl border p-5">
+            <div>
+              <h2 className="text-lg font-semibold">Slides do carrossel</h2>
+              <p className="text-sm text-muted-foreground">
+                Imagens de tela cheia com título, subtítulo e botão opcional.
+                Autoplay a cada 6 segundos e navegação por setas/pontos.
+              </p>
+            </div>
+            <HeroSlidesEditor slides={slides} onChange={setSlides} />
+          </section>
+        ) : null}
+
+        <section className={cn("space-y-4 rounded-xl border p-5", heroMode === "slider" && "opacity-70")}>
+          <div>
             <h2 className="text-lg font-semibold">Hero — texto e botão</h2>
             <p className="text-sm text-muted-foreground">
-              Conteúdo do bloco principal à esquerda da home.
+              {heroMode === "slider"
+                ? "Usado apenas no modo padrão. Mantido caso queira voltar."
+                : "Conteúdo do bloco principal à esquerda da home."}
             </p>
           </div>
 
@@ -341,11 +420,11 @@ export function HomeConfigEditor({
           </div>
         </section>
 
-        <section className="space-y-4 rounded-xl border p-5">
+        <section className={cn("space-y-4 rounded-xl border p-5", heroMode === "slider" && "opacity-70")}>
           <div>
-            <h2 className="text-lg font-semibold">Hero — imagem</h2>
+            <h2 className="text-lg font-semibold">Hero — imagem (modo padrão)</h2>
             <p className="text-sm text-muted-foreground">
-              Imagem exibida à direita do hero. Até 4 MB.
+              Imagem exibida à direita no modo padrão. Até 4 MB.
             </p>
           </div>
 
